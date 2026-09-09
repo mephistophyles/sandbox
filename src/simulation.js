@@ -1,3 +1,4 @@
+import {SIZE} from './sand.js';
 export const CAPACITY=22;
 export const front=(toy,d=1.2)=>({x:toy.x-Math.sin(toy.angle)*d,z:toy.z-Math.cos(toy.angle)*d});
 export const drive=(toy,toys,sand,keys,dt)=>{
@@ -5,7 +6,7 @@ export const drive=(toy,toys,sand,keys,dt)=>{
  const turn=Number(keys.has('a'))-Number(keys.has('d'));
  toy.angle+=turn*1.8*dt;
  const point=front(toy,throttle*2.4*dt);
- const bound=5.25;
+ const bound=SIZE/2-1.75;
  const x=Math.max(-bound,Math.min(bound,point.x)),z=Math.max(-bound,Math.min(bound,point.z));
  const blocked=toys.some(other=>other!==toy&&Math.hypot(other.x-x,other.z-z)<1.5);
  if(!blocked){toy.x=x;toy.z=z;}

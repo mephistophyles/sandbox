@@ -1,11 +1,19 @@
-export const SIZE = 14;
-export const RES = 80;
+export const SIZE = 28;
+export const RES = 160;
 export class Sand {
-  constructor() { this.heights = new Float32Array((RES + 1) ** 2); this.reset(); }
+  constructor(random = Math.random) { this.random = random; this.heights = new Float32Array((RES + 1) ** 2); this.reset(); }
   reset() {
+    // One mound in each region keeps the whole sandbox interesting, with fresh
+    // positions, widths, and heights on every creation or reset.
+    this.piles = Array.from({length: 16}, (_, i) => ({
+      x: -SIZE/2 + (i%4 + .25 + this.random()*.5)*SIZE/4,
+      z: -SIZE/2 + (Math.floor(i/4) + .25 + this.random()*.5)*SIZE/4,
+      height: .45 + this.random()*1.05,
+      width: .9 + this.random()*1.1,
+    }));
     for (let z=0;z<=RES;z++) for(let x=0;x<=RES;x++) {
       const px=x/RES*SIZE-SIZE/2, pz=z/RES*SIZE-SIZE/2;
-      this.heights[z*(RES+1)+x]=.24+.025*Math.sin(x*1.7+z*2.1)+.72*Math.exp(-((px-2.6)**2+(pz+2.1)**2)/2.5)+.38*Math.exp(-((px+3.5)**2+(pz-1.8)**2)/1.8);
+      this.heights[z*(RES+1)+x]=.24+.025*Math.sin(x*1.7+z*2.1)+this.piles.reduce((height,pile)=>height+pile.height*Math.exp(-((px-pile.x)**2+(pz-pile.z)**2)/(2*pile.width**2)),0);
     }
   }
   sample(x,z) { const ix=Math.max(0,Math.min(RES,Math.round((x+SIZE/2)/SIZE*RES))), iz=Math.max(0,Math.min(RES,Math.round((z+SIZE/2)/SIZE*RES))); return this.heights[iz*(RES+1)+ix]; }
