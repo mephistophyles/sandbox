@@ -1,0 +1,15 @@
+import { chromium } from '@playwright/test';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch({executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE||'/Users/phil/Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://localhost:5174');await page.waitForFunction(()=>window.sandbox);await page.waitForTimeout(800);
+await page.screenshot({path:'/tmp/sandbox-desktop.png'});
+let before=await page.evaluate(()=>window.sandbox.snapshot());await page.keyboard.down('w');await page.waitForTimeout(500);await page.keyboard.up('w');let after=await page.evaluate(()=>window.sandbox.snapshot());assert.notEqual(before.toys[0].z,after.toys[0].z);assert.deepEqual(before.toys[1],after.toys[1]);
+await page.keyboard.press('Space');assert.equal((await page.evaluate(()=>window.sandbox.snapshot())).toys[0].active,true);
+await page.keyboard.press('2');await page.keyboard.press('i');assert.ok((await page.evaluate(()=>window.sandbox.snapshot())).toys[1].cargo>0);await page.keyboard.press('k');assert.equal((await page.evaluate(()=>window.sandbox.snapshot())).toys[1].cargo,0);
+await page.locator('#reset').click();await page.locator('#cancel-reset').click();assert.equal((await page.evaluate(()=>window.sandbox.snapshot())).selected,1);
+await page.locator('#reset').click();await page.locator('#confirm-reset').click();assert.equal((await page.evaluate(()=>window.sandbox.snapshot())).selected,0);
+const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});mobile.on('pageerror',e=>errors.push(e.message));await mobile.goto('http://localhost:5174');await mobile.waitForFunction(()=>window.sandbox);await mobile.waitForTimeout(500);await mobile.screenshot({path:'/tmp/sandbox-mobile.png'});
+assert.ok(await mobile.locator('.touch-drive').isVisible());await mobile.locator('[data-toy="1"]').tap();await mobile.locator('#scoop').tap();assert.ok((await mobile.evaluate(()=>window.sandbox.snapshot())).toys[1].cargo>0);
+assert.equal(await mobile.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);await browser.close();console.log('Browser checks passed: render, keyboard, selection, digging, reset, mobile actions, no page errors.');
