@@ -1,10 +1,12 @@
 import * as T from 'three';
 import {box,cylinder,makeToy} from './toys.js';
 import {SIZE,RES} from './sand.js';
+import {createFollowCamera} from './follow-camera.js';
 export const createWorld=(container,sand)=>{
  const half=SIZE/2, edge=half+.3, scale=SIZE/14;
  const scene=new T.Scene();scene.background=new T.Color(0xe8eee2);
- const camera=new T.PerspectiveCamera(34,1,.1,200);camera.position.set(18,21,24);camera.lookAt(0,0,0);
+ const camera=new T.PerspectiveCamera(52,1,.1,200);
+ const followCamera=createFollowCamera(camera,sand);
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;container.appendChild(renderer.domElement);
  scene.add(new T.HemisphereLight(0xfff7df,0x8c9f7a,2.5));const sun=new T.DirectionalLight(0xfff1d1,3.2);sun.position.set(-8,16,8).multiplyScalar(scale);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-13*scale,right:13*scale,top:13*scale,bottom:-13*scale,near:1,far:45*scale});sun.shadow.normalBias=.04;sun.shadow.bias=-.0003;scene.add(sun);
  box(scene,200,.2,200,0xe8eee2,0,-.8,0);
@@ -25,6 +27,6 @@ export const createWorld=(container,sand)=>{
  box(scene,.11,.08,1.2,0xc89d65,(-half-1.4),-.62,2.5);box(scene,.37,.1,.44,0x6d9b94,(-half-1.4),-.6,1.8);
  let seed=8;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
  for(let i=0;i<130;i++){const x=(random()-.5)*(SIZE+10),z=(random()-.5)*(SIZE+7);if(Math.abs(x)<half+.9&&Math.abs(z)<half+.9)continue;const grass=new T.Group();grass.position.set(x,-.65,z);for(let j=0;j<3;j++){const blade=box(grass,.04,.16+random()*.2,.045,0xa5b492,(j-1)*.07,.09,0,.015);blade.rotation.z=(j-1)*.4;}scene.add(grass);}
- const resize=()=>{const {width,height}=container.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.position.set(18,21,24).multiplyScalar(scale*(camera.aspect<1.15?1.15/camera.aspect:1));camera.lookAt(0,0,0);camera.updateProjectionMatrix();};new ResizeObserver(resize).observe(container);resize();
- return {scene,camera,renderer,toys,ring,syncSand};
+ const resize=()=>{const {width,height}=container.getBoundingClientRect();renderer.setSize(width,height);camera.aspect=width/height;camera.updateProjectionMatrix();};new ResizeObserver(resize).observe(container);resize();
+ return {scene,camera,renderer,toys,ring,syncSand,followCamera};
 };

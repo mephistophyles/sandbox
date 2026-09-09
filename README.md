@@ -37,6 +37,7 @@ To roll back, revert the unwanted commit and push to `main`; the workflow rebuil
 ## Play
 
 - **1 / 2 / 3** or the toy cards: select the bulldozer, digger, or dump truck. You can also click a toy in the scene.
+- The camera stays in third person behind the selected toy, follows steering, and switches immediately when you choose another vehicle.
 - **W / S**: forward / reverse. **A / D**: steer.
 - **Bulldozer — Space**: lower or raise the blade. Drive forward with the blade down to push sand into piles.
 - **Digger — I / K**: scoop / release. Each scoop stays in the bucket until released. Release close to the dump truck to load its bed.
