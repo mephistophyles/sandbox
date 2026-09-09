@@ -42,7 +42,8 @@ To roll back, revert the unwanted commit and push to `main`; the workflow rebuil
 - **Bulldozer — Space**: lower or raise the blade. Drive forward with the blade down to push sand into piles.
 - **Digger — I / K**: scoop / release. Each scoop stays in the bucket until released. Release close to the dump truck to load its bed.
 - **Dump truck — Space**: tip or lower the bed. Driving with the bed down collects sand; tipping deposits the load behind the truck.
-- Touch devices show driving arrows and the same action buttons. Hold arrows to drive or steer; you can hold two at once.
+- Add `?touch` to the URL (for example, `http://localhost:5174/?touch` or `https://mephistophyles.github.io/sandbox/?touch`) to force touch controls on any device. If the URL already has query parameters, append `&touch`.
+- Touch devices show driving arrows and the same action buttons. Hold arrows to drive or steer; you can hold two at once. Touch actions fire on press; selection and long-press menus are disabled in the game. Driving stops on release, cancellation, loss of focus, or switching vehicles.
 - The circular arrow resets the scene with fresh random piles after confirmation. The question mark opens controls and pauses play.
 
 Only the selected toy moves or operates. Walls and other vehicles block movement. Sand volume is conserved across terrain, buckets, and truck loads. Reloading starts a fresh sandbox; this version does not save sessions.

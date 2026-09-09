@@ -3,8 +3,17 @@ import * as T from 'three';
 import {Sand} from './sand.js';
 import {createWorld} from './world.js';
 import {toyIcon} from './toys.js';
+import {bindDriveButtons,bindGameAction} from './touch-input.js';
 import {drive,scoop,release,CAPACITY} from './simulation.js';
 const $=s=>document.querySelector(s);
+const forceTouch=new URLSearchParams(window.location.search).has('touch');
+const touchPointer=window.matchMedia('(pointer: coarse)');
+const updateTouchControls=()=>document.documentElement.classList.toggle('touch-controls',forceTouch||touchPointer.matches||navigator.maxTouchPoints>0);
+updateTouchControls();
+touchPointer.addEventListener('change',updateTouchControls);
+// Keep the requested control mode when the home link reloads the sandbox.
+if(forceTouch) $('.brand').href='./?touch';
+
 const sand=new Sand();
 let world;
 try{world=createWorld($('#scene'),sand);}catch(error){$('#scene').innerHTML='<p style="text-align:center;padding:100px 20px">This sandbox needs WebGL. Please try a browser with graphics acceleration enabled.</p>';throw error;}
@@ -17,13 +26,17 @@ const updateUI=()=>{
  $('#action').setAttribute('aria-pressed',String(t.active));
  $('#status').textContent=selected===0?`Blade ${t.active?'down · let’s push!':'up · ready to roam'}`:selected===1?`Bucket ${t.cargo>.1?'full · find a place to drop':'empty · ready to dig'}`:`${Math.round(t.cargo/CAPACITY*100)}% full · ${t.active?'tipping sand':'drive to collect sand'}`;
 };
-const select=index=>{selected=index;world.followCamera.update(toys[index],0,true);keys.clear();document.querySelectorAll('.toy').forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-pressed',String(i===index));});updateUI();};
+const select=index=>{selected=index;world.followCamera.update(toys[index],0,true);clearInput();document.querySelectorAll('.toy').forEach((b,i)=>{b.classList.toggle('active',i===index);b.setAttribute('aria-pressed',String(i===index));});updateUI();};
 const action=()=>{if(selected===1)return;toys[selected].active=!toys[selected].active;updateUI();};
 const dig=()=>{scoop(toys[selected],sand);updateUI();};
 const drop=()=>{release(toys[selected],toys,sand);updateUI();};
-for(let i=0;i<3;i++){$(`#icon-${i}`).innerHTML=toyIcon(i);$(`[data-toy="${i}"]`).onclick=()=>select(i);}
-$('#action').onclick=action;$('#scoop').onclick=dig;$('#release').onclick=drop;
 const paused=()=>!$('#help-panel').hidden||$('#reset-dialog').open;
+const touchMode=()=>document.documentElement.classList.contains('touch-controls');
+const touchDrive=bindDriveButtons(document.querySelectorAll('[data-key]'),()=>!paused());
+const clearInput=()=>{keys.clear();touchDrive.clear();};
+for(let i=0;i<3;i++){$(`#icon-${i}`).innerHTML=toyIcon(i);bindGameAction($(`[data-toy="${i}"]`),()=>select(i),touchMode,()=>!paused());}
+for(const [selector,handler] of [['#action',action],['#scoop',dig],['#release',drop]])bindGameAction($(selector),handler,touchMode,()=>!paused());
+for(const event of ['contextmenu','selectstart','dragstart'])$('#app').addEventListener(event,e=>{if(touchMode())e.preventDefault();});
 window.addEventListener('keydown',e=>{
  if(e.target.closest('dialog')||e.target.matches('input,textarea'))return;
  const key=e.key.toLowerCase();
@@ -35,11 +48,7 @@ window.addEventListener('keydown',e=>{
  if(key===' ')action();if(key==='i')dig();if(key==='k')drop();keys.add(key);
 });
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-const clearInput=()=>keys.clear();window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',clearInput);
-for(const button of document.querySelectorAll('[data-key]')){
- button.addEventListener('pointerdown',e=>{e.preventDefault();button.setPointerCapture(e.pointerId);keys.add(button.dataset.key);});
- for(const event of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(event,()=>keys.delete(button.dataset.key));
-}
+window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',clearInput);window.addEventListener('pagehide',clearInput);
 const raycaster=new T.Raycaster();renderer.domElement.addEventListener('pointerdown',e=>{
  const rect=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new T.Vector2((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1),camera);
  const hits=raycaster.intersectObjects(toys.map(t=>t.group),true);if(!hits.length)return;
@@ -51,7 +60,7 @@ $('#reset').onclick=()=>{clearInput();$('#reset-dialog').showModal();};$('#cance
 $('#confirm-reset').onclick=()=>{sand.reset();toys.forEach((t,i)=>Object.assign(t,{x:[-3.5,.1,3.3][i],z:[2.5,-1.5,2][i],angle:[-.35,.4,-.65][i],active:false,cargo:0,arm:0}));select(0);world.syncSand();$('#reset-dialog').close();};
 const animate=now=>{
  const dt=Math.min((now-last)/1000,.04);last=now;
- if(!paused())drive(toys[selected],toys,sand,keys,dt);
+ if(!paused())drive(toys[selected],toys,sand,new Set([...keys,...touchDrive.keys()]),dt);
  for(const t of toys){t.group.position.set(t.x,sand.sample(t.x,t.z)+.035,t.z);t.group.rotation.y=t.angle;
  if(t.kind===0)t.tool.position.y=T.MathUtils.damp(t.tool.position.y,t.active?.13:.43,9,dt);
  if(t.kind===1)t.tool.rotation.x=T.MathUtils.damp(t.tool.rotation.x,t.arm,7,dt);
